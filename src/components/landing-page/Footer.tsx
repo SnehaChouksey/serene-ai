@@ -23,9 +23,9 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold">Quick Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Start Chatting</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Mood Tracker</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Resources</a></li>
+              <li><a href="/chat" className="hover:text-foreground transition-colors">Start Chatting</a></li>
+              <li><a href="/user/me" className="hover:text-foreground transition-colors">Mood Tracker</a></li>
+              <li><a href="/self-help" className="hover:text-foreground transition-colors">Resources</a></li>
           
             </ul>
           </div>

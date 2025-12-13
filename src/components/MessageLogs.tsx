@@ -1,247 +1,216 @@
-import { useEffect, useRef, useState } from "react";
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
-import { User } from "next-auth";
 import MessageBox from "./MessageBox";
 import MessageContainer from "./MessageContainer";
 import { motion } from "motion/react";
 
-interface Message {
-  role: "human" | "ai";
-  content: string;
-  createdAt: Date;
-}
+type Role = "human" | "ai";
 
-interface messageboxInput {
-  userInput: string;
-  model: string;
+interface Message {
+  id: string;
+  role: Role;
+  content: string;
+  createdAt: string;
+  isOptimistic?: boolean;
+  isStreaming?: boolean;
 }
 
 export default function MessageLogs({ sessionId }: { sessionId: string }) {
   const { data: session } = useSession();
-  const user = session?.user as User | undefined;
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [streamingMessageIndex, setStreamingMessageIndex] = useState<
-    number | null
-  >(null);
-  const hasMounted = useRef(false);
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const isUserScrolling = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tempIdRef = useRef(0);
 
-  const scrollToBottom = (behavior: "smooth" | "instant" = "smooth") => {
-    // Use requestAnimationFrame to ensure DOM is updated
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({
-        behavior,
-        block: "end",
-        inline: "nearest",
-      });
+      messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
     });
-  };
-
-  // Detect user scrolling
-  useEffect(() => {
-    const handleScroll = () => {
-      isUserScrolling.current = true;
-
-      // Clear existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      // Reset user scrolling flag after 1 second of no scrolling
-      scrollTimeoutRef.current = setTimeout(() => {
-        isUserScrolling.current = false;
-      }, 1000);
-    };
-
-    const scrollContainer = document.querySelector(".messages-container");
-    scrollContainer?.addEventListener("scroll", handleScroll);
-
-    return () => {
-      scrollContainer?.removeEventListener("scroll", handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
   }, []);
 
-  // Load messages from DB on mount
+  // Fetch initial messages on mount
   useEffect(() => {
+    if (!sessionId) return;
+    let mounted = true;
+
     const fetchMessages = async () => {
       try {
         const res = await axios.get(`/api/get-messages?sessionId=${sessionId}`);
-        const { messages } = await res.data;
-        console.log(messages);
 
-        const parsed: Message[] = messages.map((msg: any) => ({
-          ...msg,
-          createdAt: new Date(msg.createdAt),
+        if (!mounted) return;
+
+        const raw = res.data?.messages ?? [];
+        const parsed: Message[] = raw.map((m: any) => ({
+          id: m.id,
+          role: (m.role as Role) || "human",
+          content: String(m.content ?? ""),
+          createdAt: new Date(m.createdAt).toISOString(),
+          isOptimistic: false,
+          isStreaming: false,
         }));
 
         setMessages(parsed);
         setHasLoaded(true);
 
-        // Scroll to bottom after initial load with a slight delay
-        setTimeout(() => {
-          scrollToBottom("instant");
-        }, 100);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
+        setTimeout(() => scrollToBottom("instant"), 100);
+      } catch (err) {
+        console.error("[MessageLogs] fetchMessages error:", err);
         setHasLoaded(true);
       }
     };
+
     fetchMessages();
-  }, [sessionId]);
-
-  useEffect(() => {
-    if (!hasMounted.current) {
-      hasMounted.current = true;
-      return; // Skip scroll on initial load
-    }
-
-    // Only auto-scroll if user isn't manually scrolling
-    if (!isUserScrolling.current) {
-      // Use a small delay to ensure DOM is updated
-      setTimeout(() => {
-        scrollToBottom();
-      }, 50);
-    }
-  }, [messages]);
-
-  // Handle scrolling during streaming
-  useEffect(() => {
-    if (streamingMessageIndex !== null) {
-      // Scroll immediately when streaming starts (only if user isn't scrolling)
-      if (!isUserScrolling.current) {
-        scrollToBottom();
-      }
-
-      // Set up periodic scrolling during streaming
-      scrollIntervalRef.current = setInterval(() => {
-        if (!isUserScrolling.current) {
-          scrollToBottom();
-        }
-      }, 300); // Scroll every 300ms during streaming
-    } else {
-      // Clear scroll interval when streaming stops
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-        scrollIntervalRef.current = null;
-      }
-    }
 
     return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-        scrollIntervalRef.current = null;
-      }
+      mounted = false;
     };
-  }, [streamingMessageIndex]);
+  }, [sessionId, scrollToBottom]);
 
-  const handleSend = async ({ userInput, model }: messageboxInput) => {
-    if (!userInput.trim()) return;
-    setLoading(true);
+  // Send message handler
+  const handleSend = useCallback(
+    async (userInput: string) => {
+      if (!userInput || !userInput.trim()) return;
 
-    // UI update
-    const userMessage: Message = {
-      role: "human",
-      createdAt: new Date(),
-      content: userInput,
-    };
-    setMessages((prev) => [...prev, userMessage]);
+      const trimmed = userInput.trim();
+      setLoading(true);
 
-    setTimeout(() => {
-      scrollToBottom();
-    }, 100);
-
-    try {
-      // sending to chatbot
-      const res = await axios.post("/api/analyze", {
-        sessionId,
-        message: userInput,
-        model,
-      });
-
-      // AI message
-      const aiMessage: Message = {
-        role: "ai",
-        content: res.data.content,
-        createdAt: new Date(),
+      // Create optimistic user message
+      const tempId = `temp-${tempIdRef.current++}`;
+      const optimisticUser: Message = {
+        id: tempId,
+        role: "human",
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+        isOptimistic: true,
+        isStreaming: false,
       };
 
-      // Add the message and set it to stream
-      setMessages((prev) => {
-        const newMessages = [...prev, aiMessage];
-        setStreamingMessageIndex(newMessages.length - 1); // setting the index of the streaming message
-        return newMessages;
-      });
+      // Add optimistic message
+      setMessages((prev) => [...prev, optimisticUser]);
+      scrollToBottom("instant");
 
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
+      try {
+        const res = await axios.post("/api/send-message", {
+          sessionId,
+          userInput: trimmed,
+        });
 
-      // Stop streaming after the animation completes
-      setTimeout(() => {
-        setStreamingMessageIndex(null);
-      }, res.data.content.length * 20 + 500); // 20ms per character + buffer
-    } catch (error) {
-      console.error("Error sending message:", error);
-    } finally {
-      setLoading(false);
+        const { humanMessage, aiMessage } = res.data;
+
+        if (!humanMessage || !aiMessage) {
+          throw new Error("Invalid API response");
+        }
+
+        // Replace optimistic with real messages
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter((m) => m.id !== tempId);
+
+          const userMsg: Message = {
+            id: humanMessage.id,
+            role: "human",
+            content: humanMessage.content,
+            createdAt: humanMessage.createdAt,
+            isOptimistic: false,
+            isStreaming: false,
+          };
+
+          const aiMsg: Message = {
+            id: aiMessage.id,
+            role: "ai",
+            content: aiMessage.content,
+            createdAt: aiMessage.createdAt,
+            isOptimistic: false,
+            isStreaming: false,
+          };
+
+          return [...withoutOptimistic, userMsg, aiMsg];
+        });
+
+        scrollToBottom("smooth");
+      } catch (err) {
+        console.error("[MessageLogs] Send error:", err);
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        alert("Failed to send message");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sessionId, scrollToBottom]
+  );
+
+  // Auto-scroll when messages arrive
+  useEffect(() => {
+    if (hasLoaded && messages.length > 0) {
+      scrollToBottom("smooth");
     }
-  };
+  }, [messages.length, hasLoaded, scrollToBottom]);
+
   return (
-    <div className=" flex flex-col h-screen">
-      <div className="messages-container h-[calc(100vh-160px)] overflow-y-auto scrollbar-hide">
-        <div className="max-w-4xl mx-auto px-4 space-y-4">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+      {/* Messages container */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto w-full px-4 py-6 flex flex-col">
           {hasLoaded && messages.length === 0 ? (
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.4 }}
-              className="flex flex-1 flex-col h-full items-center justify-center min-h-[60vh]"
+              className="flex flex-1 flex-col items-center justify-center min-h-[60vh]"
             >
-              <div className="text-center bg-gradient-to-r from-violet-400 via-violet-500 to-violet-600 font-semibold  bg-clip-text text-transparent text-5xl">
-                Hello{user?.name ? `, ${user.name.split(" ")[0]}` : ""}!
+              <div className="text-center text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-violet-500 to-violet-600">
+                Hello{session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}!
               </div>
-              <div className="text-center text-muted-foreground font-ru text-2xl">
+              <div className="text-center text-muted-foreground text-lg mt-4">
                 What's on your mind today?
               </div>
             </motion.div>
           ) : (
             <>
-              {messages.map((msg, idx) => (
+              {messages.map((msg) => (
                 <MessageContainer
-                  key={`${msg.role}-${idx}-${msg.createdAt.getTime()}`}
+                  key={msg.id}
+                  id={msg.id}
                   role={msg.role}
-                  name={user?.name ?? "Anonymous"}
-                  avatarUrl={user?.avatarUrl ?? ""}
                   content={msg.content}
-                  isStreaming={idx === streamingMessageIndex}
+                  name={msg.role === "human" ? session?.user?.name ?? "You" : "AI"}
+                  avatarUrl={
+                    msg.role === "human"
+                      ? session?.user?.image ?? "/default-avatar.png"
+                      : "/ai-avatar.jpg"
+                  }
+                  isStreaming={msg.isStreaming}
                 />
               ))}
+
               {loading && (
                 <MessageContainer
+                  key="loading-indicator"
+                  id="loading-indicator"
                   role="ai"
-                  name="Zeltra"
-                  avatarUrl="/ai-avatar.jpg"
                   content="Thinking..."
+                  name="AI"
+                  avatarUrl="/ai-avatar.jpg"
+                  isStreaming={false}
                 />
               )}
             </>
           )}
+
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      <div className="flex justify-center w-full p-4 bg-white border-t border-indigo-100">
-        <MessageBox disabled={loading} onSend={handleSend} />
+      {/* Input box (sticky at bottom) */}
+      <div className="flex-shrink-0 flex justify-center w-full px-4 py-4 bg-background ">
+        <MessageBox
+          disabled={loading}
+          onSend={(input) => handleSend(input)}
+        />
       </div>
     </div>
   );

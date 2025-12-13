@@ -5,7 +5,7 @@ import { User } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Menu, PanelRightOpen, Brain } from "lucide-react";
+import { Menu, LucidePanelRightOpen, PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import NewChatModal from "./NewChatModal";
@@ -96,7 +96,7 @@ export default function SideBar() {
       }`}
     >
       
-      <div className="flex items-center justify-between px-4 py-4 bg-primary/5">
+      <div className="flex items-center justify-between px-3 py-3 bg-background">
         {!isCollapsed && (
           <div
             onClick={() => router.push("/")}
@@ -112,7 +112,7 @@ export default function SideBar() {
           onClick={toggleSidebar}
           className="p-1 hover:bg-primary/10 rounded transition text-foreground"
         >
-          {isCollapsed ? <Menu size={20} /> : <PanelRightOpen size={20} />}
+          {isCollapsed ? <Menu size={25} /> : <LucidePanelRightOpen size={25} />}
         </button>
       </div>
 
@@ -122,8 +122,8 @@ export default function SideBar() {
           onClick={() => setIsModalOpen(true)}
           className="flex items-center w-full gap-3 px-4 py-2 text-sm text-left text-foreground bg-transparent hover:bg-primary/10 rounded-md transition"
         >
-          <Brain size={21} className="text-foreground" />
-          {!isCollapsed && <span className="truncate">New Chat</span>}
+          <PlusIcon size={25} className="text-foreground" />
+          {!isCollapsed  && <span className="truncate">New Chat</span>}
         </button>
         
       </div>

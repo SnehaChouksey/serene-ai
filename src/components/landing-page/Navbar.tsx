@@ -1,4 +1,5 @@
 "use client";
+
 import {
   Navbar,
   NavBody,
@@ -7,14 +8,12 @@ import {
   NavbarLogo,
   NavbarButton,
   MobileNavHeader,
-  MobileNavToggle,
-  MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { use, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSession } from "next-auth/react";
 import Profile from "../Profile";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import LoginModal from "../LoginModal";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 
@@ -26,76 +25,55 @@ interface Props {
 
 export function LandingNavbar({ searchParamsPromise }: Props) {
   const searchParams = use(searchParamsPromise);
-  const loginRequired = searchParams?.loginRequired === "true";
-  const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
+  const [openLogin, setOpenLogin] = useState(false);
 
-  // Open modal if ?loginRequired=true
   useEffect(() => {
-    if (loginRequired) {
-      setOpen(true);
-
-      // Clean the URL after opening
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("loginRequired");
-
-      const newUrl =
-        window.location.pathname + (params.toString() ? `?${params}` : "");
-      router.replace(newUrl, { scroll: false });
+    if (searchParams?.loginRequired === "true") {
+      setOpenLogin(true);
+      router.replace("/", { scroll: false });
     }
   }, [searchParams, router]);
-  const { data: session } = useSession();
-  const navItems = [
-    {
-      name: "Collection",
-      link: "/self-help",
-    },
-    {
-      name: "Chat",
-      link: "/chat",
-    },
-    {
-      name: "Mood Tracker",
-      link: "/user/me",
-    },
-  ];
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // ✅ ALL CENTER ITEMS LIVE HERE — NO EXCEPTIONS
+  const navItems = [
+    { name: "Collection", link: "/self-help" },
+    { name: "Chat", link: "/chat" },
+    { name: "Mood Tracker", link: "/user/me" },
+  ];
 
   return (
     <>
       <AnimatePresence>
-        {open && <LoginModal onClose={() => setOpen(false)} />}
+        {openLogin && <LoginModal onClose={() => setOpenLogin(false)} />}
       </AnimatePresence>
+
       <motion.div
-        initial={{
-          opacity: 0,
-          y: -20,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
-        transition={{
-          duration: 0.8,
-          ease: "easeIn",
-        }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
         className="relative w-full"
       >
         <Navbar>
-          {/* Desktop Navigation */}
+          {/* DESKTOP */}
           <NavBody>
             <NavbarLogo />
-            <NavItems items={navItems} />
-            <div className="flex items-center gap-4 ">
+
+            <NavItems
+              items={navItems}
+              className="text-foreground [&_a:hover]:text-violet-500 dark:[&_a:hover]:text-violet-400"
+            />
+
+            <div className="flex items-center gap-4">
               <ModeToggle />
               {session ? (
                 <Profile />
               ) : (
                 <NavbarButton
-                  onClick={() => setOpen(true)}
+                  onClick={() => setOpenLogin(true)}
                   variant="gradient"
-                  className="rounded-4xl"
+                  className="rounded-full"
                 >
                   Login
                 </NavbarButton>
@@ -103,19 +81,19 @@ export function LandingNavbar({ searchParamsPromise }: Props) {
             </div>
           </NavBody>
 
-          {/* Mobile Navigation */}
+          {/* MOBILE */}
           <MobileNav>
             <MobileNavHeader>
               <NavbarLogo />
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-4">
                 <ModeToggle />
                 {session ? (
                   <Profile />
                 ) : (
                   <NavbarButton
-                    onClick={() => setOpen(true)}
+                    onClick={() => setOpenLogin(true)}
                     variant="gradient"
-                    className="rounded-2xl"
+                    className="rounded-full"
                   >
                     Login
                   </NavbarButton>

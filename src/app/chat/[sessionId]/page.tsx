@@ -1,25 +1,28 @@
 "use client";
 
-import ChatNavbar from "@/components/ChatNavbar";
 import MessageLogs from "@/components/MessageLogs";
+import ChatNavbar from "@/components/ChatNavbar";
 import SideBar from "@/components/SideBar";
 import { useParams } from "next/navigation";
 
-export default function Chat() {
+export default function ChatClientPage() {
   const params = useParams();
   const sessionId = params.sessionId as string;
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg">
+      {/* Sidebar */}
       <SideBar />
 
-      <div className="flex-1 h-full flex flex-col items-center bg-background  text-white">
-        <div className="w-full">
+      {/* Main chat area */}
+      <div className="flex-1 h-full flex flex-col ">
+        {/* Navbar */}
+        <div className="flex-shrink-0 border-b border-border">
           <ChatNavbar />
         </div>
 
-        <div className="fixed top-16 px-32 pb-12">
-          <MessageLogs sessionId={sessionId} />
-        </div>
+        {/* Chat messages + input (all handled by MessageLogs) */}
+        <MessageLogs sessionId={sessionId} />
       </div>
     </div>
   );

@@ -55,7 +55,7 @@ export function MoodEntryWidget() {
             {showMessage && (
               <div className="animate-fade-in bg-violet-50 border border-violet-400 rounded-xl p-4 text-primary">
                 <p className="font-medium">Nice to meet you.</p>
-                <p className="text-sm mt-1">Let's track that feeling next time you log in.</p>
+                <p className="text-sm mt-1">You and Your feelings are secured with Serene.AI</p>
               </div>
             )}
           </CardContent>

@@ -1,33 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
-import { authOptions } from "../auth/[...nextauth]/options";
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { prisma } from '@/lib/prisma';
+import { authOptions } from '../auth/[...nextauth]/options';
 
 export async function POST(req: NextRequest) {
   try {
-    const { title } = await req.json();
-    const session = await getServerSession(authOptions);
+    const body = await req.json().catch(()=>({}));
+    const title = typeof body?.title === 'string' ? body.title.trim() : 'New Chat';
 
-    if (!session || !session.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create new chat session for the user
     const newChat = await prisma.chatSession.create({
-      data: {
-        title: title,
-        userId: session.user.id,
-      },
+      data: { title: title || 'New Chat', userId: session.user.id },
     });
 
-    return NextResponse.json({
-      sessionId: newChat.id,
-    });
+    return NextResponse.json({ sessionId: newChat.id }, { status: 201 });
   } catch (err) {
-    console.error("Failed to create new chat session:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('[/api/new-chat] error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

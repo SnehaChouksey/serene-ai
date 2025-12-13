@@ -120,30 +120,48 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
     <motion.div
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-zinc-600 transition duration-200 hover:text-zinc-800 lg:flex lg:space-x-2",
+        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium lg:flex",
         className
       )}
     >
-      {items.map((item, idx) => (
-        <a
-          onMouseEnter={() => setHovered(idx)}
-          onClick={onItemClick}
-          className="relative px-4 py-2 text-gray-400 dark:text-neutral-300"
-          key={`link-${idx}`}
-          href={item.link}
-        >
-          {hovered === idx && (
-            <motion.div
-              layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-gray-100 dark:bg-neutral-800"
-            />
-          )}
-          <span className="relative z-20">{item.name}</span>
-        </a>
-      ))}
+      {items.map((item, idx) => {
+        const isHovered = hovered === idx;
+
+        return (
+          <a
+            key={`nav-item-${item.name}`}
+            href={item.link}
+            onMouseEnter={() => setHovered(idx)}
+            onClick={onItemClick}
+            className="relative px-4 py-2"
+          >
+            {/* Hover pill */}
+            {isHovered && (
+              <motion.div
+                layoutId="hovered"
+                className="absolute inset-0 rounded-full bg-violet-500"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+
+            {/* Text */}
+            <span
+              className={cn(
+                "relative z-20 transition-colors duration-200",
+                isHovered
+                  ? "text-white"
+                  : "text-foreground"
+              )}
+            >
+              {item.name}
+            </span>
+          </a>
+        );
+      })}
     </motion.div>
   );
 };
+
 
 export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   return (

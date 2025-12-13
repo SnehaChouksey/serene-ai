@@ -75,7 +75,7 @@ export const HeroSection = () => {
               </Button>
 
               <Button
-              variant="ghost" // change from outline to ghost to reduce interference
+              variant="ghost" 
               size="lg"
               onClick={() => router.push("/self-help")}
               className="flex items-center gap-2 px-8 py-6 p-6 text-lg rounded-xl border border-[#8064F2] text-foreground bg-transparent hover:shadow-[0_0_10px_2px_rgba(139,92,246,0.5)] hover:text-[#8064F2] transition-all duration-300"

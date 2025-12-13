@@ -1,77 +1,55 @@
 "use client";
+
 import { Button } from "./ui/button";
-import { CircleStopIcon, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-interface ChatInputProps {
-  onSend: ({ userInput, model }: { userInput: string; model: string }) => void;
+interface MessageBoxProps {
+  onSend: (userInput: string) => void;
   disabled: boolean;
 }
 
-export default function MessageBox({ onSend, disabled }: ChatInputProps) {
-  const [model, setModel] = useState("gemini-2.0-flash");
+export default function MessageBox({ onSend, disabled }: MessageBoxProps) {
   const [message, setMessage] = useState("");
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-  };
 
   const handleSend = () => {
     if (!message.trim()) return;
-    onSend({ userInput: message, model });
+    onSend(message);
     setMessage("");
   };
 
   return (
-    <div className="w-1/2 h-27 bottom-4 fixed flex flex-col gap-1 px-1 py-10 justify-center bg-card  border border-primary/30 rounded-xl">
-      <Textarea
-        placeholder="Pour your heart out to Serene.AI"
-        className="w-full border-none text-foreground  resize-none "
-        onChange={handleChange}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-          }
-        }}
-        value={message}
-      />
-      <div className="w-full px-2 flex justify-between items-center bottom-4">
-        <Select value={model} onValueChange={setModel}>
-          <SelectTrigger className="w-fit text-[12px] bg-primary/20 mb-4 border border-primary/30 rounded-lg text-muted-foreground">
-            <SelectValue placeholder={model} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="gemini-2.0-flash">gemini-2.0-flash</SelectItem>
-              <SelectItem value="llama-3.3-70b-versatile">
-                llama-3.3-70b-versatile
-              </SelectItem>
-              <SelectItem value="llama-3.1-8b-instant">
-                llama-3.1-8b-instant
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Button
+    <div className="w-full max-w-2xl">
+      <div className="relative flex items-end gap-2 bg-card border border-primary/20 rounded-2xl p-2 shadow-sm hover:border-primary/40 transition-colors">
+        {/* Textarea */}
+        <Textarea
+          placeholder="Ask me anything..."
+          className="flex-1 border-none text-foreground bg-transparent resize-none outline-none placeholder-muted-foreground max-h-32 min-h-10 py-2.5 px-2"
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          value={message}
           disabled={disabled}
-          className={`mt-6 m-0.5  mb-4 bg-transparent hover:bg-primary/20 cursor-pointer text-foreground ${
-            disabled ? "animate-pulse duration-300" : ""
-          }`}
+          rows={1}
+        />
+
+        {/* Send Button */}
+        <Button
+          disabled={disabled || !message.trim()}
           onClick={handleSend}
+          size="sm"
+          className="flex-shrink-0 h-8 w-8 p-0 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-40 transition-opacity"
         >
-          {disabled ? <CircleStopIcon /> : <Send />}
+          <Send size={16} className="text-white" />
         </Button>
       </div>
+
+      
     </div>
   );
 }

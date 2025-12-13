@@ -19,7 +19,7 @@ function getModelByName(modelName: string): BaseChatModel {
   let model: BaseChatModel;
 
   switch (modelName) {
-    case "gemini-2.0-flash":
+    case "gemini-2.5-flash-lite":
       model = new ChatGoogleGenerativeAI({
         model: modelName,
         temperature: 0.8,

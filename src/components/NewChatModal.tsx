@@ -13,13 +13,22 @@ export default function NewChatModal({
 }) {
   const [title, setTitle] = useState("");
 
-  const handleCreate = () => {
-    if (title.trim()) {
-      onCreate(title.trim());
-      setTitle("");
-      onClose();
-    }
-  };
+  // inside NewChatModal component
+const handleCreate = async () => {
+  if (!title.trim()) return;
+  console.log("[NewChatModal] create clicked, title:", title);
+  try {
+    // await the onCreate in case the parent returns a promise (so we can log resolution)
+    await onCreate(title.trim());
+    console.log("[NewChatModal] onCreate resolved");
+    setTitle("");
+    onClose();
+  } catch (err) {
+    console.error("[NewChatModal] onCreate error:", err);
+    // keep the modal open so user can retry
+    alert("Failed to create chat. See console for details.");
+  }
+};
 
   return (
     <AnimatePresence>

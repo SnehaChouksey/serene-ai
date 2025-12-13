@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import FloatingHearts from "@/components/landing-page/FloatingHearts";
-
+import FeatureNavbar from "@/components/ui/feature-navbar";
 
 const selfHelpMaterials = [
   {
@@ -36,36 +36,79 @@ const selfHelpMaterials = [
 ];
 
 export default function SelfHelpPage() {
+  const firstRow = selfHelpMaterials.slice(0, 3);
+  const secondRow = selfHelpMaterials.slice(3);
+
   return (
-    <div className=" relative min-h-screen w-full bg-background flex flex-col items-center py-12 px-4">
-      <FloatingHearts />
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-clip-text text-transparent text-4xl md:text-4xl font-bold mb-8"
-        style={{ backgroundImage: "linear-gradient(to right, #9a64f2 , #7564f2)" }} >
-        Find Your Calm: Self-Help Resources
-      </motion.h1>
-      <div className="w-full max-w-3xl grid gap-6">
-        {selfHelpMaterials.map((item, idx) => (
-          <motion.a
-            key={item.title}
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            initial={{ opacity: 1, y: 20 }}
+    <>
+      <FeatureNavbar />
+
+      <div className="relative min-h-screen w-full bg-background pt-24 pb-10">
+        <FloatingHearts />
+
+        <div className="flex flex-col items-center px-4">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1, duration: 0.4 }}
-            className=" relative block bg-card border border-primary/40 z-100 rounded-2xl p-6 shadow-dreamy  hover:shadow-lg hover:bg-card/50 transition-all"
+            transition={{ duration: 0.5 }}
+            className="bg-clip-text text-transparent text-3xl md:text-4xl font-bold mb-8 text-center"
+            style={{
+              backgroundImage: "linear-gradient(to right, #9a64f2 , #7564f2)",
+            }}
           >
-            <div className="text-2xl font-semibold text-card-foreground mb-2">
-              {item.title}
+            Find Your Calm: Self-Help Resources
+          </motion.h1>
+
+          {/* Row 1: 3 cards, centered */}
+          <div className="w-full max-w-6xl mb-6 flex justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+              {firstRow.map((item, idx) => (
+                <CardLink key={item.title} item={item} delay={idx * 0.08} />
+              ))}
             </div>
-            <div className="text-muted-foreground">{item.description}</div>
-          </motion.a>
-        ))}
+          </div>
+
+          {/* Row 2: 2 cards, centered */}
+          <div className="w-full max-w-4xl flex justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 pt-4 pb-10 gap-6 w-full">
+              {secondRow.map((item, idx) => (
+                <CardLink
+                  key={item.title}
+                  item={item}
+                  delay={(idx + 3) * 0.08}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+function CardLink({
+  item,
+  delay,
+}: {
+  item: (typeof selfHelpMaterials)[number];
+  delay: number;
+}) {
+  return (
+    <motion.a
+      href={item.link}
+      target="_blank"
+      rel="noopener noreferrer"
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.35 }}
+      className="relative block h-full bg-card/90 border border-primary/35 rounded-2xl p-5 shadow-dreamy hover:shadow-xl hover:bg-card transition-all"
+    >
+      <div className="text-lg md:text-xl font-semibold text-card-foreground mb-2">
+        {item.title}
+      </div>
+      <div className="text-sm md:text-base text-muted-foreground leading-relaxed">
+        {item.description}
+      </div>
+    </motion.a>
   );
 }
