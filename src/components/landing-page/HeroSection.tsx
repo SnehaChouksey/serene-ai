@@ -105,7 +105,7 @@ export const HeroSection = () => {
             </motion.div>
           </motion.div>
 
-          {/* Right Content - Chat Preview */}
+          
           <motion.div
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
