@@ -20,7 +20,6 @@ import { ModeToggle } from "@/components/ui/ModeToggle";
 interface Props {
   searchParamsPromise: Promise<{
     loginRequired?: string;
-    redirect?: string;
   }>;
 }
 
@@ -30,22 +29,16 @@ export function LandingNavbar({ searchParamsPromise }: Props) {
   const { data: session } = useSession();
   const [openLogin, setOpenLogin] = useState(false);
 
-  // 🔐 Open login modal + store redirect
+  // 🔐 Open login modal if requested
   useEffect(() => {
     if (searchParams?.loginRequired === "true") {
-      if (searchParams?.redirect) {
-        localStorage.setItem(
-          "postLoginRedirect",
-          searchParams.redirect
-        );
-      }
       setOpenLogin(true);
       router.replace("/", { scroll: false });
     }
   }, [searchParams, router]);
 
-  // 👇 Central navigation logic
-  const handleProtectedNav = (path: string) => {
+  // 🧠 Central navigation guard
+  const handleNav = (path: string) => {
     if (!session?.user) {
       localStorage.setItem("postLoginRedirect", path);
       router.push("/?loginRequired=true");
@@ -55,21 +48,9 @@ export function LandingNavbar({ searchParamsPromise }: Props) {
   };
 
   const navItems = [
-    {
-      name: "Collection",
-      link: "/self-help",
-      onClick: () => handleProtectedNav("/self-help"),
-    },
-    {
-      name: "Chat",
-      link: "/chat",
-      onClick: () => handleProtectedNav("/chat"),
-    },
-    {
-      name: "Mood Tracker",
-      link: "/user/me",
-      onClick: () => handleProtectedNav("/user/me"),
-    },
+    { name: "Collection", link: "/self-help" },
+    { name: "Chat", link: "/chat" },
+    { name: "Mood Tracker", link: "/user/me" },
   ];
 
   return (
@@ -89,14 +70,18 @@ export function LandingNavbar({ searchParamsPromise }: Props) {
           <NavBody>
             <NavbarLogo />
 
-            <NavItems
-              items={navItems.map(({ name, link, onClick }) => ({
-                name,
-                link,
-                onClick,
-              }))}
-              className="text-foreground [&_a:hover]:text-violet-500 dark:[&_a:hover]:text-violet-400"
-            />
+            {/* ⛔ We intercept clicks manually */}
+            <div className="flex flex-1 justify-center gap-2">
+              {navItems.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => handleNav(item.link)}
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-violet-500 dark:hover:text-violet-400"
+                >
+                  {item.name}
+                </button>
+              ))}
+            </div>
 
             <div className="flex items-center gap-4">
               <ModeToggle />

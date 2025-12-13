@@ -7,22 +7,25 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import FeatureNavbar from "@/components/ui/feature-navbar";
 import { EmotionTrendChart } from "@/components/EmotionTrendChart";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import FloatingHearts from "@/components/landing-page/FloatingHearts";
 
 export default function UserDashboard() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
+
+  // 🔐 AUTH GUARD (THIS IS THE KEY FIX)
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      localStorage.setItem("postLoginRedirect", "/user/me");
+      router.replace("/?loginRequired=true");
+    }
+  }, [status, router]);
+
+  if (status === "loading" || !user) {
+    return null; // prevents flash + redirect race
+  }
 
   return (
     <>
@@ -46,32 +49,32 @@ export default function UserDashboard() {
             transition={{ duration: 0.4 }}
             className="bg-card border border-primary/40 rounded-2xl p-5 md:p-6 shadow-dreamy flex flex-col md:flex-row gap-6 items-stretch"
           >
-            {/* Left: user info */}
+            {/* Left */}
             <div className="flex-shrink-0 flex flex-col items-center justify-center gap-2">
               <Image
-                src={user?.avatarUrl ?? "/default-avatar.png"}
+                src={user.avatarUrl ?? "/default-avatar.png"}
                 height={80}
                 width={80}
                 alt="User Avatar"
                 className="w-20 h-20 rounded-full border-2 border-white bg-indigo-100 object-cover"
               />
-              <div className="text-lg font-semibold text-foreground text-center">
-                {user?.name ?? "Anonymous"}
+              <div className="text-lg font-semibold text-foreground">
+                {user.name}
               </div>
-              <div className="text-xs md:text-sm text-muted-foreground text-center">
-                {user?.email ?? "No email"}
+              <div className="text-sm text-muted-foreground">
+                {user.email}
               </div>
               <Button
                 onClick={() => router.push("/daily-emotion")}
                 size="sm"
-                className="mt-3 bg-gradient-to-r from-violet-400 to-violet-500 text-white hover:from-violet-500 hover:to-violet-600"
+                className="mt-3 bg-gradient-to-r from-violet-400 to-violet-500 text-white"
               >
                 Submit daily report
               </Button>
             </div>
 
-            {/* Right: chart card, same color as parent (bg-card), size adjusted */}
-            <div className="flex-1 flex flex-col justify-center">
+            {/* Right */}
+            <div className="flex-1 flex items-center justify-center">
               <EmotionTrendChart />
             </div>
           </motion.div>
