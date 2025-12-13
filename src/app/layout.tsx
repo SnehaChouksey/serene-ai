@@ -4,12 +4,18 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Serene.AI",
   description: "Mental wellness companion",
+  icons: {
+    icon: "/favicon.ico", // or "/favicon.png"
+  },
 };
+
+
+const inter = Inter({ subsets: ["latin"] });
+
 
 export default function RootLayout({
   children,

@@ -36,7 +36,7 @@ export function EmotionTrendChart() {
         Emotional analytics
       </h2>
 
-      <div className="p-3 md:p-4 border rounded-2xl bg-card/80 shadow-dreamy">
+      <div className="p-3 md:p-4 border rounded-2xl bg-card shadow-dreamy">
         {data.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm">
             No data yet.

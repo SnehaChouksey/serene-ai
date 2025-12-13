@@ -76,7 +76,7 @@ export function LandingNavbar({ searchParamsPromise }: Props) {
                 <button
                   key={item.name}
                   onClick={() => handleNav(item.link)}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-violet-500 dark:hover:text-violet-400"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white dark:hover:bg-violet-500 rounded-full transition"
                 >
                   {item.name}
                 </button>
