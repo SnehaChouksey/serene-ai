@@ -8,7 +8,7 @@ import axios from "axios";
 export default function ChatRedirectPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const hasRun = useRef(false); // prevents double execution in strict mode
+  const hasRun = useRef(false);
 
   useEffect(() => {
     if (hasRun.current) return;
@@ -16,16 +16,25 @@ export default function ChatRedirectPage() {
 
     hasRun.current = true;
 
-    // 1️⃣ Not logged in → go home + login modal
+    // 🔁 Redirect intent has priority
+    const redirectIntent =
+      typeof window !== "undefined"
+        ? localStorage.getItem("postLoginRedirect")
+        : null;
+
     if (!session?.user?.id) {
       router.replace("/?loginRequired=true");
       return;
     }
 
-    // 2️⃣ Logged in → decide chat destination
+    if (redirectIntent && redirectIntent !== "/chat") {
+      localStorage.removeItem("postLoginRedirect");
+      router.replace(redirectIntent);
+      return;
+    }
+
     const resolveChat = async () => {
       try {
-        // fetch existing sessions
         const res = await fetch(
           `/api/get-sessions?userId=${session.user.id}`,
           { cache: "no-store" }
@@ -36,13 +45,11 @@ export default function ChatRedirectPage() {
           const sessions = data.sessions ?? [];
 
           if (sessions.length > 0) {
-            // open latest chat
             router.replace(`/chat/${sessions[0].id}`);
             return;
           }
         }
 
-        // 3️⃣ No sessions → create one
         const createRes = await axios.post("/api/new-chat", {
           title: "New Chat",
         });
@@ -59,6 +66,5 @@ export default function ChatRedirectPage() {
     resolveChat();
   }, [session, status, router]);
 
-  // 🚫 NOTHING RENDERS — THIS IS THE KEY
   return null;
 }
