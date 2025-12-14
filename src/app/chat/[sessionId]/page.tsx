@@ -10,22 +10,27 @@ export default function ChatClientPage() {
   const sessionId = params.sessionId as string;
 
   return (
+    // Outer Wrapper: Hides overflow to prevent double scrollbars
     <div className="flex h-dvh w-full overflow-hidden bg-background relative">
-      {/* Sidebar: Mobile Drawer | Desktop Relative Panel */}
+      
+      {/* Sidebar Component handles its own responsive width/visibility */}
       <SideBar />
 
-      {/* Main chat area */}
-      <main className="flex-1 flex flex-col h-full relative min-w-0 transition-all duration-300">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col h-full relative min-w-0 bg-background/50 transition-all duration-300">
         
-        {/* Navbar */}
-        <div className="flex-shrink-0 border-b border-border z-20 bg-background/95 backdrop-blur-md">
-          <ChatNavbar />
+        {/* Navbar Wrapper */}
+        <div className="flex-shrink-0 border-b border-border z-20 bg-background/80 backdrop-blur-md">
+           {/* pl-12 pushes navbar content right ON MOBILE ONLY to avoid the floating menu button */}
+           <div className="pl-12 md:pl-0 transition-all">
+              <ChatNavbar />
+           </div>
         </div>
 
         {/* Chat Messages */}
         <div className="flex-1 relative overflow-hidden flex flex-col">
           <div className="flex-1 w-full h-full relative">
-             <MessageLogs sessionId={sessionId} />
+            <MessageLogs sessionId={sessionId} />
           </div>
         </div>
       </main>
