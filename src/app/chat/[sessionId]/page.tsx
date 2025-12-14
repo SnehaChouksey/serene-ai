@@ -10,19 +10,21 @@ export default function ChatClientPage() {
   const sessionId = params.sessionId as string;
 
   return (
-    <div className="flex h-screen bg">
-      {/* Sidebar */}
+    <div className="flex h-dvh w-full overflow-hidden bg-background relative">
+      {/* Sidebar - Mobile: Fixed overlay | Desktop: Relative flex item */}
       <SideBar />
 
       {/* Main chat area */}
-      <div className="flex-1 h-full flex flex-col ">
+      <div className="flex-1 flex flex-col h-full relative w-full overflow-hidden transition-all duration-300">
         {/* Navbar */}
-        <div className="flex-shrink-0 border-b border-border">
+        <div className="flex-shrink-0 border-b border-border z-20 bg-background">
           <ChatNavbar />
         </div>
 
-        {/* Chat messages + input (all handled by MessageLogs) */}
-        <MessageLogs sessionId={sessionId} />
+        {/* Chat messages + input area */}
+        <div className="flex-1 relative overflow-hidden">
+          <MessageLogs sessionId={sessionId} />
+        </div>
       </div>
     </div>
   );
