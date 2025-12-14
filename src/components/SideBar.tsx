@@ -5,7 +5,7 @@ import { User } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Menu, LucidePanelRightOpen, PlusIcon } from "lucide-react";
+import { Menu, LucidePanelRightOpen, PlusIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import NewChatModal from "./NewChatModal";
@@ -18,26 +18,27 @@ export default function SideBar() {
   const [chatLogs, setChatLogs] = useState<z.infer<typeof ChatSessionSchema>[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const chatItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Auto-collapse on mobile init
+  // Handle Resize & Init
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsCollapsed(true); // Default to closed on mobile
+      } else {
+        setIsCollapsed(false); // Default to open on desktop
       }
     };
-    
-    // Initial check
     handleResize();
-
-    // Optional: Add listener if you want dynamic resizing logic
-    // window.addEventListener('resize', handleResize);
-    // return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleNewChat = async (title: string) => {
@@ -45,8 +46,7 @@ export default function SideBar() {
       const res = await axios.post("/api/new-chat", { title });
       const { sessionId } = res.data;
       router.push(`/chat/${sessionId}`);
-      // On mobile, close sidebar after navigation for better UX
-      if (window.innerWidth < 768) setIsCollapsed(true);
+      if (isMobile) setIsCollapsed(true);
     } catch (err) {
       console.error("Failed to create new chat session", err);
     }
@@ -56,10 +56,9 @@ export default function SideBar() {
     setIsCollapsed(!isCollapsed);
   };
 
-  const handleSessionClick = (id?: string) => {
-    if (!id) return;
+  const handleSessionClick = (id: string) => {
     router.push(`/chat/${id}`);
-    if (window.innerWidth < 768) setIsCollapsed(true);
+    if (isMobile) setIsCollapsed(true);
   };
 
   useEffect(() => {
@@ -73,36 +72,29 @@ export default function SideBar() {
     }
   }, [session]);
 
+  // GSAP Animations
   useEffect(() => {
-    if (sidebarRef.current) {
+    if (sidebarRef.current && !isMobile) {
       gsap.fromTo(
         sidebarRef.current,
-        { x: -100, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" }
+        { x: -20, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
       );
     }
-
-    if (logoRef.current) {
-      gsap.fromTo(
-        logoRef.current,
-        { scale: 0 },
-        { scale: 1, duration: 0.6, ease: "back.out(1.7)", delay: 0.3 }
-      );
-    }
-  }, []);
+  }, [isMobile]); // Re-run if switching modes
 
   useEffect(() => {
     if (chatItemRefs.current.length > 0) {
       gsap.fromTo(
         chatItemRefs.current,
-        { opacity: 0, y: 10 },
+        { opacity: 0, x: -10 },
         {
           opacity: 1,
-          y: 0,
-          duration: 0.4,
-          ease: "power2.out",
-          stagger: 0.08,
-          delay: 0.4,
+          x: 0,
+          duration: 0.3,
+          ease: "power1.out",
+          stagger: 0.05,
+          delay: 0.2,
         }
       );
     }
@@ -110,61 +102,95 @@ export default function SideBar() {
 
   return (
     <>
-      {/* Mobile Backdrop: Closes sidebar when clicking outside on small screens */}
-      {!isCollapsed && (
+      {/* MOBILE OVERLAY BACKDROP */}
+      {isMobile && !isCollapsed && (
         <div 
           onClick={() => setIsCollapsed(true)}
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300"
         />
       )}
 
+      {/* MOBILE FLOATING TOGGLE BUTTON (Visible only when Sidebar is HIDDEN on Mobile) */}
+      {isMobile && isCollapsed && (
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="fixed top-3.5 left-4 z-[70] p-2 bg-background/80 backdrop-blur-md border border-border/50 rounded-full shadow-sm text-foreground hover:bg-muted transition-all"
+          aria-label="Open Menu"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
+      {/* SIDEBAR CONTAINER */}
       <aside
         ref={sidebarRef}
-        className={`h-dvh bg-background border-r border-border transition-all duration-300 flex flex-col z-50 fixed md:relative left-0 top-0 shadow-xl md:shadow-none ${
-          isCollapsed ? "w-[72px]" : "w-[280px]"
-        }`}
+        className={`
+          flex flex-col h-dvh bg-background border-r border-border
+          transition-all duration-300 ease-in-out
+          
+          /* LAYOUT LOGIC */
+          fixed md:relative top-0 left-0 z-[80]
+          
+          /* MOBILE: Full width drawer or hidden */
+          ${isMobile 
+            ? (isCollapsed ? "-translate-x-full w-[280px]" : "translate-x-0 w-[280px] shadow-2xl") 
+            : (isCollapsed ? "w-[80px]" : "w-[280px]")
+          }
+          
+          /* DESKTOP: Sticky/Relative behavior handled by parent flex */
+        `}
       >
-        {/* Header: Logo & Toggle */}
-        <div className={`flex items-center py-4 bg-background ${isCollapsed ? 'justify-center px-0' : 'justify-between px-4'}`}>
-          {!isCollapsed && (
-            <div
-              onClick={() => router.push("/")}
-              className="flex items-center gap-3 cursor-pointer overflow-hidden"
-              ref={logoRef}
-            >
-              <div className="flex-shrink-0">
-                <Image src="/serene-logo.png" alt="Logo" width={28} height={28} className="object-contain" />
-              </div>
-              <h2 className="text-lg font-bold tracking-tight text-foreground whitespace-nowrap">Serene.AI</h2>
+        {/* HEADER */}
+        <div className={`flex items-center h-16 flex-shrink-0 ${isCollapsed && !isMobile ? 'justify-center' : 'justify-between px-4'}`}>
+          {/* Logo - Hidden if collapsed on desktop */}
+          <div
+            onClick={() => router.push("/")}
+            className={`flex items-center gap-3 cursor-pointer overflow-hidden transition-all duration-300 ${isCollapsed && !isMobile ? 'hidden' : 'flex'}`}
+            ref={logoRef}
+          >
+            <div className="relative h-8 w-8 flex-shrink-0">
+               <Image src="/serene-logo.png" alt="Logo" width={32} height={32} className="object-contain" />
             </div>
-          )}
+            <h2 className="text-lg font-bold text-foreground whitespace-nowrap">Serene.AI</h2>
+          </div>
 
+          {/* Toggle Button */}
           <button
             onClick={toggleSidebar}
-            className="p-2 hover:bg-muted/80 rounded-md transition-colors text-foreground/80 hover:text-foreground"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground ${isMobile ? 'ml-auto' : ''}`}
           >
-            {isCollapsed ? <Menu size={24} /> : <LucidePanelRightOpen size={24} />}
+            {isMobile 
+              ? <X size={20} /> // Close icon on mobile
+              : (isCollapsed ? <LucidePanelRightOpen size={20} /> : <Menu size={20} />)
+            }
           </button>
         </div>
 
-        {/* New Chat Button */}
-        <div className="px-3 mt-2">
+        {/* NEW CHAT BUTTON */}
+        <div className="px-3 mt-2 mb-2 flex-shrink-0">
           <button
             onClick={() => setIsModalOpen(true)}
-            className={`flex items-center w-full gap-3 px-3 py-2.5 text-sm font-medium text-left text-foreground bg-primary/5 hover:bg-primary/10 border border-transparent hover:border-primary/20 rounded-lg transition-all shadow-sm ${
-              isCollapsed ? "justify-center px-0" : ""
-            }`}
+            className={`
+              flex items-center gap-3 px-3 py-3 rounded-xl transition-all shadow-sm group
+              ${isCollapsed && !isMobile
+                ? "justify-center bg-transparent hover:bg-muted text-foreground" 
+                : "w-full bg-primary/10 hover:bg-primary/20 text-primary font-medium"
+              }
+            `}
           >
-            <PlusIcon size={22} className="text-primary flex-shrink-0" />
-            {!isCollapsed && <span className="truncate">New Chat</span>}
+            <PlusIcon size={20} className="flex-shrink-0" />
+            <span className={`whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed && !isMobile ? 'w-0 opacity-0 hidden' : 'block'}`}>
+              New Chat
+            </span>
           </button>
         </div>
 
-        {/* Chat History List */}
-        <nav className="mt-6 flex-1 overflow-y-auto px-2 space-y-1 scrollbar-thin scrollbar-thumb-border">
-          {!isCollapsed && chatLogs.length > 0 && (
-             <h3 className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recent Chats</h3>
+        {/* CHAT LIST */}
+        <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-1 scrollbar-thin scrollbar-thumb-border/50">
+          {(!isCollapsed || isMobile) && chatLogs.length > 0 && (
+             <h3 className="px-2 py-2 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+               Recent
+             </h3>
           )}
           
           {chatLogs.map((item, index) => (
@@ -173,30 +199,35 @@ export default function SideBar() {
               ref={(el) => {
                 chatItemRefs.current[index] = el;
               }}
-              onClick={() => handleSessionClick(item.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg cursor-pointer hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors group ${
-                isCollapsed ? "justify-center" : ""
-              }`}
+              onClick={() => item.id && handleSessionClick(item.id)}
+              className={`
+                flex items-center gap-3 px-3 py-3 text-sm rounded-xl cursor-pointer transition-all duration-200 group
+                ${isCollapsed && !isMobile ? "justify-center" : ""}
+                hover:bg-muted hover:shadow-sm
+              `}
+              title={item.title}
             >
-              {!isCollapsed ? (
-                <span className="truncate">{item.title}</span>
-              ) : (
-                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 group-hover:bg-primary transition-colors" />
-              )}
+              <div className="flex-shrink-0 text-muted-foreground/70 group-hover:text-primary transition-colors">
+                <div className="h-2 w-2 rounded-full bg-current" />
+              </div>
+              
+              <span className={`truncate text-muted-foreground group-hover:text-foreground transition-all duration-300 ${isCollapsed && !isMobile ? 'hidden' : 'block'}`}>
+                {item.title}
+              </span>
             </div>
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="border-t border-border px-4 py-4 mt-auto">
-          {!isCollapsed ? (
-            <p className="text-xs text-muted-foreground text-center font-medium">
+        {/* FOOTER */}
+        <div className="border-t border-border/50 px-4 py-4 mt-auto bg-muted/5 flex-shrink-0">
+          {(!isCollapsed || isMobile) ? (
+            <p className="text-xs text-muted-foreground text-center font-medium opacity-80">
               Powered by Serene.AI
             </p>
           ) : (
-            <div className="flex justify-center">
-                <div className="h-1 w-8 rounded-full bg-border" />
-            </div>
+             <div className="flex justify-center">
+               <div className="h-1.5 w-1.5 rounded-full bg-border" />
+             </div>
           )}
         </div>
       </aside>

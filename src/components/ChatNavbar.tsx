@@ -13,35 +13,42 @@ export default function ChatNavbar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="w-full border-b border-border bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <header className="w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 transition-all duration-300">
         
-        {/* Mobile: Just spacer / Desktop: Spacer to push nav center */}
+        {/* LEFT: Mobile Logo (Visible only when Sidebar is hidden on mobile) */}
+        {/* We add pl-10 on mobile to avoid overlap with the Floating Sidebar Button */}
+        <div className="flex items-center gap-2 pl-10 md:pl-0 md:hidden transition-all">
+           <span className="font-bold text-lg tracking-tight text-primary">Serene</span>
+        </div>
+
+        {/* DESKTOP SPACER: Pushes nav to center on large screens */}
         <div className="hidden md:flex flex-1" />
 
-        {/* Center: Feature tabs */}
-        <nav className="flex items-center gap-1 sm:gap-2">
+        {/* CENTER: Navigation Pills */}
+        <nav className="flex items-center gap-1 sm:gap-2 mx-2 md:mx-0">
           <button
             onClick={() => router.push("/chat")}
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-1.5 text-sm font-medium transition-colors ${
+            className={`relative flex items-center justify-center gap-2 rounded-full px-3 py-2 sm:px-5 sm:py-2 text-sm font-medium transition-all duration-200 ${
               isActive("/chat")
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary/10 text-primary shadow-sm"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
-            title="Chat"
           >
             <MessageCircle className="h-5 w-5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Chat</span>
+            {isActive("/chat") && (
+                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-primary sm:hidden" />
+            )}
           </button>
 
           <button
             onClick={() => router.push("/self-help")}
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-1.5 text-sm font-medium transition-colors ${
+            className={`relative flex items-center justify-center gap-2 rounded-full px-3 py-2 sm:px-5 sm:py-2 text-sm font-medium transition-all duration-200 ${
               isActive("/self-help")
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary/10 text-primary shadow-sm"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
-            title="Collections"
           >
             <FolderOpen className="h-5 w-5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Collections</span>
@@ -49,19 +56,18 @@ export default function ChatNavbar() {
 
           <button
             onClick={() => router.push("/user/me")}
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-1.5 text-sm font-medium transition-colors ${
+            className={`relative flex items-center justify-center gap-2 rounded-full px-3 py-2 sm:px-5 sm:py-2 text-sm font-medium transition-all duration-200 ${
               isActive("/user/me")
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary/10 text-primary shadow-sm"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
-            title="Mood Tracker"
           >
             <HeartPulse className="h-5 w-5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Mood tracker</span>
+            <span className="hidden sm:inline">Mood</span>
           </button>
         </nav>
 
-        {/* Right: Mode toggle + Profile */}
+        {/* RIGHT: Actions */}
         <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
           <ModeToggle />
           <Profile />
