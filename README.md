@@ -2,7 +2,7 @@
 
 An AI-powered mental wellness SaaS platform designed to support emotional well-being through intelligent conversations, daily self-reflection, and curated self-help resources.
 
-🌐 **Live Demo:** [serene-ai.vercel.app](serene-ai-fawn.vercel.app)
+🌐 **Live Demo:** [serene-ai.vercel.app](https://serene-ai-fawn.vercel.app/)
 
 ---
 
